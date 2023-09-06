@@ -1,44 +1,49 @@
 import { Injectable } from '@nestjs/common';
 import { BookEntity } from './entity/book.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AddBookArgs } from './args/add.books.args';
+import { UpdateBooksArgs } from './args/update.books.args';
 
 @Injectable()
 export class BookService {
   public bookData: BookEntity[] = [];
-  constructor() {
-    this.bookData = [
-      {
-        id: 1,
-        price: 500,
-        title: 'The war',
-      },
-    ];
-  }
+  constructor(
+    @InjectRepository(BookEntity)
+    private readonly bookRepo: Repository<BookEntity>,
+  ) {}
 
-  addBook(bookData: BookEntity) {
-    this.bookData.push(bookData);
+  async addBook(bookData: AddBookArgs): Promise<string> {
+    const book: BookEntity = new BookEntity();
+    book.price = bookData.price;
+    book.title = bookData.title;
+    await this.bookRepo.save(book);
     return 'Book Added successfully';
   }
 
-  updateBook(id: number, updatedBook: BookEntity): string {
-    for (let i = 0; i < this.bookData.length; i++) {
-      if (this.bookData[i].id === id) {
-        this.bookData[i] = updatedBook;
-        break;
-      }
-    }
+  async updateBook(UpdateBooksArgs: UpdateBooksArgs): Promise<string> {
+    const book = await this.bookRepo.findOne({
+      where: { id: UpdateBooksArgs.id },
+    });
+
+    book.price = UpdateBooksArgs.price;
+    book.title = UpdateBooksArgs.title;
+    await this.bookRepo.save(book);
     return 'Book Updated successfully';
   }
 
-  deleteBook(id: number) {
-    this.bookData = this.bookData.filter((book: BookEntity) => book.id !== id);
+  async deleteBook(id: number): Promise<string> {
+    await this.bookRepo.delete(id);
     return 'Book deleted successfully';
   }
 
-  findBookById(id: number) {
-    return this.bookData.find((book) => book.id === id);
+  async findBookById(id: number): Promise<BookEntity> {
+    const book = await this.bookRepo.findOne({ where: { id } });
+    return book;
   }
 
-  findAllBooks() {
-    return this.bookData;
+  async findAllBooks(): Promise<BookEntity[]> {
+    const books = await this.bookRepo.find();
+    return books;
   }
 }
