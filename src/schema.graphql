@@ -11,6 +11,7 @@ type Book {
 type Query {
   books: [Book!]!
   bookById(bookId: Int!): Book!
+  Login(email: String!, password: String!): String!
 }
 
 type Mutation {
